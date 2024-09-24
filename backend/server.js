@@ -13,44 +13,15 @@ app.use(express.json());
 // Middleware pour autoriser les requêtes cross-origin
 app.use(cors());
 
-// Route POST pour sauvegarder les données en CSV
-app.post('/suites/all', async (req, res) => {
-    const suites = req.body;
-    const csvFilePath = path.join(__dirname, 'data', 'data.csv');
-
-    const writer = csvWriter({
-        path: csvFilePath,
-        header: [
-            { id: 'id', title: 'id' },
-            { id: 'nbRooms', title: 'nbRooms' },
-            { id: 'surface', title: 'surface' },
-            { id: 'nbWindows', title: 'nbWindows' },
-            { id: 'price', title: 'price' },
-        ],
-        fieldDelimiter: ';',
-    });
-
-    try {
-        // Écrire les données dans le fichier CSV
-        await writer.writeRecords(suites);
-
-        // Retourner le JSON envoyé en réponse
-        res.json(suites);
-    } catch (err) {
-        console.error('Error writing CSV file:', err);
-        res.status(500).json({ error: 'Failed to save CSV file' });
-    }
-});
-
-// Route POST pour sauvegarder une seule suite en CSV
+// Route POST pour ajouter une seule suite en CSV
 app.post('/suites', async (req, res) => {
     const newSuite = req.body;
-    const csvFilePath = path.join(__dirname, 'data', 'data.csv');
+    const csvFilePath = path.join(__dirname, 'data', 'apartments.csv');
 
     // Lire les données existantes du fichier CSV
     const existingSuites = [];
     fs.createReadStream(csvFilePath)
-        .pipe(csvParser({ separator: ';' }))
+        .pipe(csvParser({ separator: ',' }))
         .on('data', (row) => {
             existingSuites.push(row);
         })
@@ -85,12 +56,18 @@ app.post('/suites', async (req, res) => {
                 path: csvFilePath,
                 header: [
                     { id: 'id', title: 'id' },
-                    { id: 'nbRooms', title: 'nbRooms' },
-                    { id: 'surface', title: 'surface' },
+                    { id: 'city', title: 'city' },
+                    { id: 'number_of_rooms', title: 'number_of_rooms' },
+                    { id: 'area', title: 'area' },
                     { id: 'nbWindows', title: 'nbWindows' },
-                    { id: 'price', title: 'price' },
+                    { id: 'price (euros)', title: 'price (euros)' },
+                    { id: 'years_of_construction', title: 'years_of_construction' },
+                    { id: 'have_balcony', title: 'have_balcony' },
+                    { id: 'have_garage', title: 'have_garage' },
+                    { id: 'rating', title: 'rating' },
+                    { id: 'category', title: 'category' },
                 ],
-                fieldDelimiter: ';',
+                fieldDelimiter: ',',
             });
 
             try {
@@ -108,11 +85,11 @@ app.post('/suites', async (req, res) => {
 
 // Route GET pour récupérer toutes les suites en json
 app.get('/suites', (req, res) => {
-    const csvFilePath = path.join(__dirname, 'data', 'data.csv');
+    const csvFilePath = path.join(__dirname, 'data', 'apartments.csv');
 
     const suites = [];
     fs.createReadStream(csvFilePath)
-        .pipe(csvParser({ separator: ';' }))
+        .pipe(csvParser({ separator: ',' }))
         .on('data', (row) => {
             suites.push(row);
         })
@@ -124,13 +101,13 @@ app.get('/suites', (req, res) => {
 // Route GET pour récupérer une seule suite en json
 app.get('/suites/:id', (req, res) => {
     const id = req.params.id;
-    const csvFilePath = path.join(__dirname, 'data', 'data.csv');
+    const csvFilePath = path.join(__dirname, 'data', 'apartments.csv');
 
     let suite = null;
     fs.createReadStream(csvFilePath)
-        .pipe(csvParser({ separator: ';' }))
+        .pipe(csvParser({ separator: ',' }))
         .on('data', (row) => {
-            if (row.ID === id) {
+            if (row.id === id) {
                 suite = row;
             }
         })
@@ -147,12 +124,12 @@ app.get('/suites/:id', (req, res) => {
 app.patch('/suites/:id', async (req, res) => {
     const id = req.params.id;
     const updatedSuite = req.body;
-    const csvFilePath = path.join(__dirname, 'data', 'data.csv');
+    const csvFilePath = path.join(__dirname, 'data', 'apartments.csv');
 
     // Lire les données existantes du fichier CSV
     const existingSuites = [];
     fs.createReadStream(csvFilePath)
-        .pipe(csvParser({ separator: ';' }))
+        .pipe(csvParser({ separator: ',' }))
         .on('data', (row) => {
             existingSuites.push(row);
         })
@@ -171,12 +148,18 @@ app.patch('/suites/:id', async (req, res) => {
             const writer = csvWriter({
                 path: csvFilePath, header: [
                     { id: 'id', title: 'id' },
-                    { id: 'nbRooms', title: 'nbRooms' },
-                    { id: 'surface', title: 'surface' },
+                    { id: 'city', title: 'city' },
+                    { id: 'number_of_rooms', title: 'number_of_rooms' },
+                    { id: 'area', title: 'area' },
                     { id: 'nbWindows', title: 'nbWindows' },
-                    { id: 'price', title: 'price' },
+                    { id: 'price (euros)', title: 'price (euros)' },
+                    { id: 'years_of_construction', title: 'years_of_construction' },
+                    { id: 'have_balcony', title: 'have_balcony' },
+                    { id: 'have_garage', title: 'have_garage' },
+                    { id: 'rating', title: 'rating' },
+                    { id: 'category', title: 'category' },
                 ],
-                fieldDelimiter: ';',
+                fieldDelimiter: ',',
             });
 
             try {
@@ -197,12 +180,12 @@ app.patch('/suites/:id', async (req, res) => {
 // Route DELETE pour supprimer une seule suite
 app.delete('/suites/:id', async (req, res) => {
     const id = req.params.id;
-    const csvFilePath = path.join(__dirname, 'data', 'data.csv');
+    const csvFilePath = path.join(__dirname, 'data', 'apartments.csv');
 
     // Lire les données existantes du fichier CSV
     const existingSuites = [];
     fs.createReadStream(csvFilePath)
-        .pipe(csvParser({ separator: ';' }))
+        .pipe(csvParser({ separator: ',' }))
         .on('data', (row) => {
             existingSuites.push(row);
         })
@@ -221,12 +204,18 @@ app.delete('/suites/:id', async (req, res) => {
             const writer = csvWriter({
                 path: csvFilePath, header: [
                     { id: 'id', title: 'id' },
-                    { id: 'nbRooms', title: 'nbRooms' },
-                    { id: 'surface', title: 'surface' },
+                    { id: 'city', title: 'city' },
+                    { id: 'number_of_rooms', title: 'number_of_rooms' },
+                    { id: 'area', title: 'area' },
                     { id: 'nbWindows', title: 'nbWindows' },
-                    { id: 'price', title: 'price' },
+                    { id: 'price (euros)', title: 'price (euros)' },
+                    { id: 'years_of_construction', title: 'years_of_construction' },
+                    { id: 'have_balcony', title: 'have_balcony' },
+                    { id: 'have_garage', title: 'have_garage' },
+                    { id: 'rating', title: 'rating' },
+                    { id: 'category', title: 'category' },
                 ],
-                fieldDelimiter: ';',
+                fieldDelimiter: ',',
             });
 
             try {
