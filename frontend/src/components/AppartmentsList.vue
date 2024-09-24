@@ -9,21 +9,71 @@
                     <v-simple-table class="styled-table">
                         <thead>
                             <tr>
-                                <th>Appartement</th>
-                                <th>Nombre de pièces</th>
+                                <th>#</th>
+                                <th>Ville</th>
+                                <th>Pièces</th>
                                 <th>Surface (m²)</th>
-                                <th>Nombre de fenêtres</th>
+                                <th>Année</th>
+                                <th>Balcon</th>
+                                <th>Garage</th>
                                 <th>Prix (€)</th>
+                                <th>Note</th>
+                                <th>Qualité / Prix</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-for="suite in suites" :key="suite.id">
                                 <td>{{ suite.id }}</td>
-                                <td>{{ suite.nbRooms }}</td>
-                                <td>{{ suite.surface }}</td>
-                                <td>{{ suite.nbWindows }}</td>
-                                <td>{{ suite.price }}</td>
+                                <td>{{ suite.city }}</td>
+                                <td>{{ suite.number_of_rooms }}</td>
+                                <td>{{ suite.area }} m²</td>
+                                <td>{{ suite.years_of_construction }}</td>
+                                <td>
+                                    {{
+                                        suite.have_balcony == 1 ? "Oui" : "Non"
+                                    }}
+                                </td>
+                                <td>
+                                    {{ suite.have_garage == 1 ? "Oui" : "Non" }}
+                                </td>
+                                <td>
+                                    {{
+                                        new Intl.NumberFormat("fr-FR", {
+                                            style: "currency",
+                                            currency: "EUR",
+                                        }).format(suite.price)
+                                    }}
+                                </td>
+                                <td>
+                                    <v-rating
+                                        v-model="suite.rating"
+                                        length="5"
+                                        readonly
+                                        color="yellow"
+                                        background-color="grey"
+                                    ></v-rating>
+                                </td>
+                                <td>
+                                    <v-chip
+                                        :color="
+                                            getCategoryColor(suite.category)
+                                        "
+                                        dark
+                                    >
+                                        {{
+                                            suite.category === "low"
+                                                ? "Bas"
+                                                : suite.category === "medium"
+                                                ? "Moyen"
+                                                : suite.category === "high"
+                                                ? "Haut"
+                                                : suite.category === "scam"
+                                                ? "Arnaque"
+                                                : "Inconnu"
+                                        }}
+                                    </v-chip>
+                                </td>
                                 <td>
                                     <v-btn
                                         @click="editSuite(suite)"
@@ -57,37 +107,72 @@
                             : "Ajouter un appartement"
                     }}</v-card-title>
                     <v-form @submit.prevent="submitForm">
+                        <v-select
+                            v-model="form.city"
+                            :items="['Paris', 'Lyon', 'Marseille']"
+                            label="Ville"
+                            required
+                        ></v-select>
                         <v-text-field
-                            v-model.number="form.nbRooms"
+                            v-model.number="form.number_of_rooms"
                             label="Nombre de pièces"
                             type="number"
                             required
                         ></v-text-field>
                         <v-text-field
-                            v-model.number="form.surface"
+                            v-model.number="form.area"
                             label="Surface"
                             type="number"
                             required
                         ></v-text-field>
                         <v-text-field
-                            v-model.number="form.nbWindows"
-                            label="Nombre de fenêtres"
+                            v-model.number="form.years_of_construction"
+                            label="Année de construction"
                             type="number"
                             required
                         ></v-text-field>
+                        <v-row>
+                            <v-col cols="6">
+                                <v-checkbox
+                                    v-model="form.have_balcony"
+                                    label="Balcon"
+                                    value="1"
+                                ></v-checkbox>
+                            </v-col>
+                            <v-col cols="6">
+                                <v-checkbox
+                                    v-model="form.have_garage"
+                                    label="Garage"
+                                    value="1"
+                                ></v-checkbox>
+                            </v-col>
+                        </v-row>
                         <v-text-field
                             v-model.number="form.price"
                             label="Prix"
                             type="number"
                             required
                         ></v-text-field>
+                        <v-rating
+                            v-model="form.rating"
+                            label="Note"
+                            dense
+                            color="yellow"
+                            background-color="grey"
+                        ></v-rating>
 
-                        <v-btn type="submit" color="success">
-                            {{ editMode ? "Mettre à jour" : "Ajouter" }}
-                        </v-btn>
-                        <v-btn @click="resetForm" color="error" v-if="editMode">
-                            Annuler
-                        </v-btn>
+                        <v-row>
+                            <v-col cols="6">
+                                <v-btn type="submit" color="success" block>
+                                    {{ editMode ? "Mettre à jour" : "Ajouter" }}
+                                </v-btn>
+                            </v-col>
+                            <v-col cols="6" v-if="editMode">
+                                <v-btn @click="resetForm" color="error" block>
+                                    Annuler
+                                </v-btn>
+                            </v-col>
+                        </v-row>
                     </v-form>
                 </v-card>
             </v-col>
@@ -104,7 +189,7 @@ const suites = ref([]);
 onMounted(async () => {
     try {
         const response = await axios.get("http://localhost:3002/suites");
-        suites.value = response.data;
+        suites.value = response.data.slice(0, 100);
         console.log(response.data);
     } catch (error) {
         console.error(error);
@@ -120,6 +205,21 @@ const form = ref({
 });
 
 const editMode = ref(false);
+
+const getCategoryColor = (category) => {
+    switch (category) {
+        case "low":
+            return "green";
+        case "medium":
+            return "orange";
+        case "high":
+            return "red";
+        case "scam":
+            return "purple";
+        default:
+            return "grey";
+    }
+};
 
 // Ajouter ou mettre à jour un appartement
 const submitForm = async () => {
