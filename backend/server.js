@@ -13,6 +13,21 @@ app.use(express.json());
 // Middleware pour autoriser les requêtes cross-origin
 app.use(cors());
 
+// Route GET pour récupérer toutes les suites en json
+app.get('/suites', (req, res) => {
+    const csvFilePath = path.join(__dirname, 'data', 'apartments.csv');
+
+    const suites = [];
+    fs.createReadStream(csvFilePath)
+        .pipe(csvParser({ separator: ',' }))
+        .on('data', (row) => {
+            suites.push(row);
+        })
+        .on('end', () => {
+            res.json(suites);
+        });
+});
+
 // Route POST pour ajouter une seule suite en CSV
 app.post('/suites', async (req, res) => {
     const newSuite = req.body;
@@ -60,7 +75,7 @@ app.post('/suites', async (req, res) => {
                     { id: 'number_of_rooms', title: 'number_of_rooms' },
                     { id: 'area', title: 'area' },
                     { id: 'nbWindows', title: 'nbWindows' },
-                    { id: 'price (euros)', title: 'price (euros)' },
+                    { id: 'price', title: 'price' },
                     { id: 'years_of_construction', title: 'years_of_construction' },
                     { id: 'have_balcony', title: 'have_balcony' },
                     { id: 'have_garage', title: 'have_garage' },
@@ -80,21 +95,6 @@ app.post('/suites', async (req, res) => {
                 console.error('Error writing CSV file:', err);
                 res.status(500).json({ error: 'Failed to save CSV file' });
             }
-        });
-});
-
-// Route GET pour récupérer toutes les suites en json
-app.get('/suites', (req, res) => {
-    const csvFilePath = path.join(__dirname, 'data', 'apartments.csv');
-
-    const suites = [];
-    fs.createReadStream(csvFilePath)
-        .pipe(csvParser({ separator: ',' }))
-        .on('data', (row) => {
-            suites.push(row);
-        })
-        .on('end', () => {
-            res.json(suites);
         });
 });
 
@@ -152,7 +152,7 @@ app.patch('/suites/:id', async (req, res) => {
                     { id: 'number_of_rooms', title: 'number_of_rooms' },
                     { id: 'area', title: 'area' },
                     { id: 'nbWindows', title: 'nbWindows' },
-                    { id: 'price (euros)', title: 'price (euros)' },
+                    { id: 'price', title: 'price' },
                     { id: 'years_of_construction', title: 'years_of_construction' },
                     { id: 'have_balcony', title: 'have_balcony' },
                     { id: 'have_garage', title: 'have_garage' },
@@ -208,7 +208,7 @@ app.delete('/suites/:id', async (req, res) => {
                     { id: 'number_of_rooms', title: 'number_of_rooms' },
                     { id: 'area', title: 'area' },
                     { id: 'nbWindows', title: 'nbWindows' },
-                    { id: 'price (euros)', title: 'price (euros)' },
+                    { id: 'price', title: 'price' },
                     { id: 'years_of_construction', title: 'years_of_construction' },
                     { id: 'have_balcony', title: 'have_balcony' },
                     { id: 'have_garage', title: 'have_garage' },
