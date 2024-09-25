@@ -190,7 +190,13 @@ onMounted(async () => {
     try {
         const response = await axios.get("http://localhost:3002/suites");
         suites.value = response.data.slice(0, 100);
-        console.log(response.data);
+    } catch (error) {
+        console.error(error);
+    }
+
+    // entrainement des prédictions
+    try {
+        await axios.post("http://localhost:8000/train");
     } catch (error) {
         console.error(error);
     }
