@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from loguru import logger
@@ -9,6 +10,15 @@ import pandas as pd
 
 # Initialisation de FastAPI
 app = FastAPI()
+
+# Ajoute le middleware CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["POST"],
+    allow_headers=["*"],
+)
 
 # Définition d'un modèle pour les données d'entrée
 class PredictionDataModel1(BaseModel):
