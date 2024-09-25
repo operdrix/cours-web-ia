@@ -153,4 +153,4 @@ async def predict(data: PredictionDataModel3):
     return {"predicted_have_balcony": int(predicted_have_balcony)}
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="localhost", port=5000)
+    uvicorn.run(app, host="localhost", port=8000)
