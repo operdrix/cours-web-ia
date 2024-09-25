@@ -39,7 +39,7 @@ async def train():
     global is_model3_trained
 
     # Lire le fichier CSV
-    df = pd.read_csv('../backend/data/apartments.csv')
+    df = pd.read_csv('../backend-express/data/apartments.csv')
     df['is_Paris'] = (df['city'] == 'Paris').astype(int)
     df['is_Lyon'] = (df['city'] == 'Lyon').astype(int)
     df['is_Marseille'] = (df['city'] == 'Marseille').astype(int)
