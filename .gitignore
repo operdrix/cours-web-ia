@@ -1,3 +1,7 @@
 /python
 /bruno
 .DS_Store
+
+#ide
+.idea
+.vscode
