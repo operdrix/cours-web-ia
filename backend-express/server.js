@@ -17,6 +17,10 @@ app.use(cors());
 app.get('/suites', (req, res) => {
     const csvFilePath = path.join(__dirname, 'data', 'apartments.csv');
 
+    // Obtenez les paramètres de pagination de la requête (par défaut : page 1 et 10 suites par page)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+
     const suites = [];
     fs.createReadStream(csvFilePath)
         .pipe(csvParser({ separator: ',' }))
@@ -24,9 +28,28 @@ app.get('/suites', (req, res) => {
             suites.push(row);
         })
         .on('end', () => {
-            res.json(suites);
+            // Calculer le nombre total d'éléments et le nombre de pages
+            const totalSuites = suites.length;
+            const totalPages = Math.ceil(totalSuites / limit);
+
+            // Découper les données en fonction de la page et de la limite
+            const startIndex = (page - 1) * limit;
+            const endIndex = page * limit;
+            const paginatedSuites = suites.slice(startIndex, endIndex);
+
+            // Construire la réponse avec les informations de pagination
+            const response = {
+                page: page,
+                limit: limit,
+                totalSuites: totalSuites,
+                totalPages: totalPages,
+                suites: paginatedSuites,
+            };
+
+            res.json(response);
         });
 });
+
 
 // Route POST pour ajouter une seule suite en CSV
 app.post('/suites', async (req, res) => {
