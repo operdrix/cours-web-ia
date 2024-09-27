@@ -35,11 +35,13 @@ class PredictionDataModel3(BaseModel):
 model1 = LinearRegression()
 model2 = LinearRegression()
 model3 = LogisticRegression()
+model4 = LogisticRegression()
 
 # Variable pour vérifier si le modèle est entraîné
 is_model1_trained = False
 is_model2_trained = False
 is_model3_trained = False
+is_model4_trained = False
 
 # Endpoint pour entraîner les modèle
 @app.post("/train")
@@ -47,6 +49,7 @@ async def train():
     global is_model1_trained
     global is_model2_trained
     global is_model3_trained
+    global is_model4_trained
 
     # Lire le fichier CSV
     df = pd.read_csv('../backend-express/data/apartments.csv')
@@ -74,10 +77,17 @@ async def train():
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
     model3.fit(X_train, y_train)
 
+    # Entrainement sur la la probabilité d'avoir un garage par regression logistique
+    X = df[['is_Paris', 'is_Lyon', 'is_Marseille', 'price']]
+    y = df['have_garage']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+    model4.fit(X_train, y_train)
+
     # Marquer le modèle comme entraîné
     is_model1_trained = True
     is_model2_trained = True
     is_model3_trained = True
+    is_model4_trained = True
 
     # Logging avec Loguru
     logger.info("Modèles entraînés avec succès.")
@@ -87,8 +97,10 @@ async def train():
     logger.info(f"Coefficients: {model2.coef_}, Intercept: {model2.intercept_}")
     logger.info(f"Modèle 3: {is_model3_trained}")
     logger.info(f"Coefficients: {model3.coef_}, Intercept: {model3.intercept_}")
+    logger.info(f"Modèle 4: {is_model4_trained}")
+    logger.info(f"Coefficients: {model4.coef_}, Intercept: {model4.intercept_}")
 
-    return {"message": "Modèle entraîné avec succès."}
+    return {"message": "Modèles entraînés avec succès."}
 
 # Endpoint pour prédire une note en fonction de la ville, la surface et le prix
 @app.post("/predict-rating")
@@ -164,3 +176,28 @@ async def predict(data: PredictionDataModel3):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="localhost", port=8000)
+
+# Endpoint pour prédire la probabilité d'avoir un garage en fonction de la ville et le prix
+@app.post("/predict-have-garage")
+async def predict(data: PredictionDataModel3):
+    global is_model4_trained
+
+    # Vérifier si le modèle a été entraîné
+    if not is_model4_trained:
+        raise HTTPException(
+            status_code=400, detail="Le modèle have_garage n'est pas encore entraîné. Veuillez entraîner le modèle d'abord.")
+
+    isParis = (data.city == 'Paris')
+    isLyon = (data.city == 'Lyon')
+    isMarseille = (data.city == 'Marseille')
+    X_new = np.array([[isParis, isLyon, isMarseille, data.price]])
+
+    # Prédire la probabilité d'avoir un garage
+    predicted_have_garage = model4.predict(X_new)[0]
+
+    # Logging avec Loguru
+    logger.info(f"Prédiction faite pour ville : {data.city} et prix: {data.price}")
+    logger.info(f"Probabilité d'avoir un garage prédite: {predicted_have_garage}")
+
+    return {"predicted_have_garage": int(predicted_have_garage)}
+
