@@ -1,7 +1,158 @@
 <template>
     <v-container>
         <v-row>
-            <v-col cols="9">
+            <!-- Formulaire d'ajout/modification -->
+            <v-col>
+                <v-card class="pa-3 ma-2">
+                    <v-card-title class="headline">{{
+                        editMode
+                            ? "Modifier un appartement"
+                            : "Ajouter un appartement"
+                    }}</v-card-title>
+                    <v-form @submit.prevent="submitForm">
+                        <v-select
+                            v-model="form.city"
+                            :items="['Paris', 'Lyon', 'Marseille']"
+                            label="Ville"
+                            required
+                        ></v-select>
+                        <v-text-field
+                            v-model.number="form.number_of_rooms"
+                            label="Nombre de pièces"
+                            type="number"
+                            required
+                        ></v-text-field>
+                        <v-text-field
+                            v-model.number="form.area"
+                            label="Surface"
+                            type="number"
+                            required
+                        ></v-text-field>
+                        <v-row>
+                            <v-col>
+                                <v-text-field
+                                    v-model.number="form.years_of_construction"
+                                    label="Année de construction"
+                                    type="number"
+                                    required
+                                ></v-text-field>
+                            </v-col>
+                            <v-col>
+                                <p v-if="!editMode && form.city">
+                                    <v-btn
+                                        @click="getPredictionYear"
+                                        color="primary"
+                                    >
+                                        Prédire de l'année
+                                    </v-btn>
+                                </p>
+                            </v-col>
+                        </v-row>
+
+                        <v-row>
+                            <v-col cols="3">
+                                <v-checkbox
+                                    v-model="form.have_balcony"
+                                    label="Balcon"
+                                    value="1"
+                                ></v-checkbox>
+                            </v-col>
+                            <v-col cols="3">
+                                <p v-if="!editMode && form.city && form.price">
+                                    <v-btn
+                                        @click="getPredictionHaveBalcony"
+                                        color="primary"
+                                    >
+                                        Prédire de balcon </v-btn
+                                    ><br />
+                                    {{
+                                        predictedHaveBalcony !== null
+                                            ? predictedHaveBalcony
+                                                ? "Avec balcon"
+                                                : "Sans balcon"
+                                            : ""
+                                    }}
+                                </p>
+                            </v-col>
+                            <v-col cols="3">
+                                <v-checkbox
+                                    v-model="form.have_garage"
+                                    label="Garage"
+                                    value="1"
+                                ></v-checkbox>
+                            </v-col>
+                            <v-col cols="3">
+                                <p v-if="!editMode && form.city && form.price">
+                                    <v-btn
+                                        @click="getPredictionHaveGarage"
+                                        color="primary"
+                                    >
+                                        Prédire de garage </v-btn
+                                    ><br />
+                                    {{
+                                        predictedHaveGarage !== null
+                                            ? predictedHaveGarage
+                                                ? "Avec garage"
+                                                : "Sans garage"
+                                            : ""
+                                    }}
+                                </p>
+                            </v-col>
+                        </v-row>
+                        <v-text-field
+                            v-model.number="form.price"
+                            label="Prix"
+                            type="number"
+                            required
+                        ></v-text-field>
+                        <v-row>
+                            <v-col>
+                                <v-rating
+                                    v-model="form.rating"
+                                    label="Note"
+                                    dense
+                                    color="yellow"
+                                    background-color="grey"
+                                    size="24"
+                                ></v-rating>
+                            </v-col>
+                            <v-col>
+                                <p
+                                    v-if="
+                                        !editMode &&
+                                        form.city &&
+                                        form.area &&
+                                        form.price
+                                    "
+                                >
+                                    <v-btn
+                                        @click="getPredictionRating"
+                                        color="primary"
+                                    >
+                                        Prédire de la note
+                                    </v-btn>
+                                </p>
+                            </v-col>
+                        </v-row>
+                        <v-row>
+                            <v-col cols="6">
+                                <v-btn type="submit" color="success" block>
+                                    {{ editMode ? "Mettre à jour" : "Ajouter" }}
+                                </v-btn>
+                            </v-col>
+                            <v-col cols="6" v-if="editMode">
+                                <v-btn @click="resetForm" color="error" block>
+                                    Annuler
+                                </v-btn>
+                            </v-col>
+                        </v-row>
+                    </v-form>
+                </v-card>
+            </v-col>
+        </v-row>
+        <v-row>
+            <!-- Liste des appartements -->
+            <v-col>
                 <v-card>
                     <v-card-title class="headline"
                         >Liste d'appartements</v-card-title
@@ -23,7 +174,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="suite in suites" :key="suite.id">
+                            <tr v-for="suite in apartments" :key="suite.id">
                                 <td>{{ suite.id }}</td>
                                 <td>{{ suite.city }}</td>
                                 <td>{{ suite.number_of_rooms }}</td>
@@ -48,10 +199,13 @@
                                 <td>
                                     <v-rating
                                         v-model="suite.rating"
+                                        label="Note"
+                                        dense
                                         length="5"
                                         readonly
                                         color="yellow"
                                         background-color="grey"
+                                        size="16"
                                     ></v-rating>
                                 </td>
                                 <td>
@@ -98,103 +252,48 @@
                         </tbody>
                     </v-simple-table>
                 </v-card>
-            </v-col>
-            <v-col cols="3">
-                <v-card style="padding: 10px">
-                    <v-card-title class="headline">{{
-                        editMode
-                            ? "Modifier un appartement"
-                            : "Ajouter un appartement"
-                    }}</v-card-title>
-                    <v-form @submit.prevent="submitForm">
-                        <v-select
-                            v-model="form.city"
-                            :items="['Paris', 'Lyon', 'Marseille']"
-                            label="Ville"
-                            required
-                        ></v-select>
-                        <v-text-field
-                            v-model.number="form.number_of_rooms"
-                            label="Nombre de pièces"
-                            type="number"
-                            required
-                        ></v-text-field>
-                        <v-text-field
-                            v-model.number="form.area"
-                            label="Surface"
-                            type="number"
-                            required
-                        ></v-text-field>
-                        <v-text-field
-                            v-model.number="form.years_of_construction"
-                            label="Année de construction"
-                            type="number"
-                            required
-                        ></v-text-field>
-                        <v-row>
-                            <v-col cols="6">
-                                <v-checkbox
-                                    v-model="form.have_balcony"
-                                    label="Balcon"
-                                    value="1"
-                                ></v-checkbox>
-                            </v-col>
-                            <v-col cols="6">
-                                <v-checkbox
-                                    v-model="form.have_garage"
-                                    label="Garage"
-                                    value="1"
-                                ></v-checkbox>
-                            </v-col>
-                        </v-row>
-                        <v-text-field
-                            v-model.number="form.price"
-                            label="Prix"
-                            type="number"
-                            required
-                        ></v-text-field>
-                        <v-rating
-                            v-model="form.rating"
-                            label="Note"
-                            dense
-                            color="yellow"
-                            background-color="grey"
-                        ></v-rating>
-
-                        <v-row>
-                            <v-col cols="6">
-                                <v-btn type="submit" color="success" block>
-                                    {{ editMode ? "Mettre à jour" : "Ajouter" }}
-                                </v-btn>
-                            </v-col>
-                            <v-col cols="6" v-if="editMode">
-                                <v-btn @click="resetForm" color="error" block>
-                                    Annuler
-                                </v-btn>
-                            </v-col>
-                        </v-row>
-                    </v-form>
-                </v-card>
+                <!-- Pagination -->
+                <v-pagination
+                    v-model="currentPage"
+                    :length="totalPages"
+                    :total-visible="7"
+                ></v-pagination>
             </v-col>
         </v-row>
     </v-container>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import axios from "axios";
 
-const suites = ref([]);
+const apartments = ref([]);
+const currentPage = ref(1);
+const totalPages = ref(0);
+const itemsPerPage = ref(50);
 
-onMounted(async () => {
+const fetchApartments = async () => {
+    console.log("fetching apartments");
+
     try {
-        const response = await axios.get("http://localhost:3002/suites");
-        suites.value = response.data.slice(0, 100);
+        const response = await axios.get("http://localhost:3002/suites", {
+            params: {
+                page: currentPage.value,
+                limit: itemsPerPage.value,
+            },
+        });
+        totalPages.value = response.data.totalPages;
+        apartments.value = response.data.suites;
     } catch (error) {
         console.error(error);
     }
+};
+watch(currentPage, fetchApartments);
 
-    // entrainement des prédictions
+onMounted(async () => {
+    await fetchApartments();
+
+    // Entraînement des prédictions
     try {
         await axios.post("http://localhost:8000/train");
     } catch (error) {
@@ -204,10 +303,14 @@ onMounted(async () => {
 
 const form = ref({
     id: null,
-    nbRooms: "",
-    surface: "",
-    nbWindows: "",
+    city: "",
+    number_of_rooms: "",
+    area: "",
+    years_of_construction: "",
+    have_balcony: false,
+    have_garage: false,
     price: "",
+    rating: 0,
 });
 
 const editMode = ref(false);
@@ -227,16 +330,13 @@ const getCategoryColor = (category) => {
     }
 };
 
-// Ajouter ou mettre à jour un appartement
 const submitForm = async () => {
     if (editMode.value) {
         try {
-            await axios.patch(`http://localhost:3002/suites/${form.value.id}`, {
-                nbRooms: form.value.nbRooms,
-                surface: form.value.surface,
-                nbWindows: form.value.nbWindows,
-                price: form.value.price,
-            });
+            await axios.patch(
+                `http://localhost:3002/suites/${form.value.id}`,
+                form.value
+            );
             const index = suites.value.findIndex(
                 (suite) => suite.id === form.value.id
             );
@@ -262,13 +362,11 @@ const submitForm = async () => {
     }
 };
 
-// Remplir le formulaire pour l'édition
 const editSuite = (suite) => {
     form.value = { ...suite };
     editMode.value = true;
 };
 
-// Supprimer un appartement
 const deleteSuite = async (id) => {
     try {
         await axios.delete(`http://localhost:3002/suites/${id}`);
@@ -278,16 +376,84 @@ const deleteSuite = async (id) => {
     }
 };
 
-// Réinitialiser le formulaire après soumission ou annulation
 const resetForm = () => {
     form.value = {
         id: null,
-        nbRooms: "",
-        surface: "",
-        nbWindows: "",
+        city: "",
+        number_of_rooms: "",
+        area: "",
+        years_of_construction: "",
+        have_balcony: false,
+        have_garage: false,
         price: "",
+        rating: 0,
     };
     editMode.value = false;
+};
+
+const predictedRating = ref(null);
+const predictedYear = ref(null);
+const predictedHaveBalcony = ref(null);
+const predictedHaveGarage = ref(null);
+
+const getPredictionRating = async () => {
+    try {
+        const response = await axios.post(
+            "http://localhost:8000/predict-rating",
+            {
+                city: form.value.city,
+                area: form.value.area,
+                price: form.value.price,
+            }
+        );
+        form.value.rating = Math.min(response.data.predicted_rating, 5);
+        predictedRating.value = form.value.rating;
+    } catch (error) {
+        console.error(error);
+    }
+};
+const getPredictionYear = async () => {
+    try {
+        const response = await axios.post(
+            "http://localhost:8000/predict-years-of-construction",
+            {
+                city: form.value.city,
+            }
+        );
+        form.value.years_of_construction =
+            response.data.predicted_years_of_construction;
+        predictedYear.value = form.value.years_of_construction;
+    } catch (error) {
+        console.error(error);
+    }
+};
+const getPredictionHaveBalcony = async () => {
+    try {
+        const response = await axios.post(
+            "http://localhost:8000/predict-have-balcony",
+            {
+                city: form.value.city,
+                price: form.value.price,
+            }
+        );
+        predictedHaveBalcony.value = response.data.predicted_have_balcony;
+    } catch (error) {
+        console.error(error);
+    }
+};
+const getPredictionHaveGarage = async () => {
+    try {
+        const response = await axios.post(
+            "http://localhost:8000/predict-have-garage",
+            {
+                city: form.value.city,
+                price: form.value.price,
+            }
+        );
+        predictedHaveGarage.value = response.data.predicted_have_garage;
+    } catch (error) {
+        console.error(error);
+    }
 };
 </script>
 
@@ -319,5 +485,9 @@ const resetForm = () => {
 .action-btn {
     margin-right: 5px;
     width: 25px;
+}
+
+.table-responsive {
+    overflow-x: auto;
 }
 </style>
